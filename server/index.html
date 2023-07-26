@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta X-UA-Compatible="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Server</title>
+</head>
+
+<body>
+  <textarea type="text" id="Message" onkeyup="onMsgBoxKeydown(event)"></textarea>
+  <button onclick="sendMessage">Send</button>
+
+  <div id="Container"></div>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script>
+    const sendMessage = () => {
+      const _msgInput = document.getElementById('Message')
+      const _container = document.getElementById('Container')
+      const _userChild = createChild(_msgInput.value, 'user')
+      const _assistantChild = createChild('', 'assistant')
+      _container.appendChild(_userChild);
+      _container.appendChild(_assistantChild);
+
+      const url = new URL('/chat', window.location.href);
+      url.searchParams.set('message', _msgInput.value);
+      _msgInput.value = '';
+      const es = new EventSource(url);
+      es.onmessage = e => {
+        if (e && e.data) {
+          const { is_end, result } = JSON.parse(e.data);
+          _assistantChild.innerHTML += marked.parse(result);
+          if (is_end) {
+            es.close();
+          }
+        }
+      }
+    }
+    const onMsgBoxKeydown = (e) => {
+      if (e.keyCode === 13) {
+        sendMessage();
+      }
+    }
+    const createChild = (content, type) => {
+      const child = document.createElement('pre');
+      const childType = type || 'assistant'
+      child.classList.add(childType);
+      child.innerHTML = content;
+      return child;
+    }
+  </script>
+</body>
+
+</html>
